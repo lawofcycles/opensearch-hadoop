@@ -14,11 +14,13 @@ The below matrix shows the compatibility of the [`opensearch-hadoop`](https://ce
 
 | Client Version | Spark Version | Scala Version(s) |
 |----------------| ------------- | ---------------- |
-| 1.0.0-1.1.0    | 3.2.4         | 2.12/2.13        |
-| 1.0.0-1.1.0    | 4.0.0         | 2.13             |
+| 1.0.0-1.1.0    | 3.4.4         | 2.12/2.13        |
+| 1.0.0-1.1.0    | 3.5.x         | 2.12/2.13        |
+| 1.0.0-1.1.0    | 4.1.1         | 2.13             |
 
 ## Compatibility with AWS Glue
 
 | Client Version | Spark Version | Glue Version(s) |
 |----------------| ------------- | --------------- |
-| 1.0.0-1.1.0    | 3.2.4         | 3/4             |
+| 1.0.0-1.1.0    | 3.4.4         | 3/4             |
+| 1.0.0-1.1.0    | 3.5.x         | 5               |
