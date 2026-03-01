@@ -62,6 +62,11 @@ sparkVariants {
             add(variant.configuration('implementation'), "org.apache.spark:spark-sql_${variant.scalaMajorVersion}:$variant.sparkVersion") {
                 exclude group: 'org.apache.hadoop'
             }
+            // Spark 3.5+ moved Row, StructType, etc. to spark-sql-api and Logging to spark-common-utils
+            if (variant.sparkVersion.startsWith("3.5")) {
+                add(variant.configuration('implementation'), "org.apache.spark:spark-sql-api_${variant.scalaMajorVersion}:$variant.sparkVersion")
+                add(variant.configuration('compileOnly'), "org.apache.spark:spark-common-utils_${variant.scalaMajorVersion}:$variant.sparkVersion")
+            }
             add(variant.configuration('implementation'), "org.apache.spark:spark-streaming_${variant.scalaMajorVersion}:$variant.sparkVersion") {
                 exclude group: 'org.apache.hadoop'
             }

@@ -33,7 +33,6 @@ import org.apache.spark.TaskContext
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.encoders.ExpressionEncoder
-import org.apache.spark.sql.catalyst.encoders.RowEncoder
 import org.apache.spark.sql.types.StructType
 import org.opensearch.spark.rdd.OpenSearchRDDWriter
 import org.opensearch.spark.sql.DataFrameFieldExtractor
@@ -57,8 +56,24 @@ private [sql] class OpenSearchStreamQueryWriter(serializedSettings: String,
   override protected def bytesConverter: Class[_ <: BytesConverter] = classOf[JdkBytesConverter]
   override protected def fieldExtractor: Class[_ <: FieldExtractor] = classOf[DataFrameFieldExtractor]
 
-  private val encoder: ExpressionEncoder[Row] = RowEncoder(schema).resolveAndBind()
-  private val deserializer: ExpressionEncoder.Deserializer[Row] = encoder.createDeserializer()
+  // Spark 3.5+ uses ExpressionEncoder.apply(StructType), Spark 3.4 uses RowEncoder.apply(StructType).
+  // Both are invoked via reflection to maintain runtime compatibility across versions without
+  // compile-time dependency on version-specific APIs.
+  private val encoder: ExpressionEncoder[Row] = {
+    try {
+      val companion = Class.forName("org.apache.spark.sql.catalyst.encoders.ExpressionEncoder$")
+        .getField("MODULE$").get(null)
+      companion.getClass.getMethod("apply", classOf[StructType])
+        .invoke(companion, schema).asInstanceOf[ExpressionEncoder[Row]]
+    } catch {
+      case _: NoSuchMethodException =>
+        val companion = Class.forName("org.apache.spark.sql.catalyst.encoders.RowEncoder$")
+          .getField("MODULE$").get(null)
+        companion.getClass.getMethod("apply", classOf[StructType])
+          .invoke(companion, schema).asInstanceOf[ExpressionEncoder[Row]]
+    }
+  }
+  private val deserializer: ExpressionEncoder.Deserializer[Row] = encoder.resolveAndBind().createDeserializer()
 
   override def write(taskContext: TaskContext, data: Iterator[InternalRow]): Unit = {
     // Keep clients from using this method, doesn't return task commit information.
